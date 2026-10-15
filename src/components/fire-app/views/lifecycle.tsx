@@ -1,0 +1,32 @@
+"use client";
+
+import { useState } from "react";
+import { AreaChart, Area, CartesianGrid, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Plus, Trash2 } from "lucide-react";
+import { baseExpenseAtMonth, lifecycleYearSummary } from "@/engine/lifecycle";
+import type { HouseholdSnapshot, LifecycleExpenseRule } from "@/types/finance";
+import { Field, NullableField, PageIntro, Panel, clone } from "../ui";
+export const lifecycleCategoryNames: Record<LifecycleExpenseRule["category"], string> = { education: "子女教育", eldercare: "老人照护", medical: "医疗护理", living: "生活阶段", insurance: "保险保障", other: "其他" };
+
+export function Lifecycle({ household, change }: { household: HouseholdSnapshot; change: (next: HouseholdSnapshot) => void }) {
+  const [selectedYear, setSelectedYear] = useState(Number(household.baseMonth.slice(0, 4)));
+  const rules = household.lifecycle ?? [];
+  const updateRule = (id: string, values: Partial<LifecycleExpenseRule>) => { const next = clone(household); next.lifecycle = next.lifecycle.map((rule) => rule.id === id ? { ...rule, ...values } : rule); change(next); };
+  const addRule = () => { const next = clone(household); next.lifecycle = [...next.lifecycle, { id: crypto.randomUUID(), name: "新的阶段性支出", category: "other", startMonth: household.baseMonth, monthlyAmount: null, annualAmount: null, oneTimeAmount: null, inflationRate: 0.02, mode: "additional", essential: false }]; change(next); };
+  const removeRule = (rule: LifecycleExpenseRule) => { if (!window.confirm(`删除“${rule.name}”？`)) return; const next = clone(household); next.lifecycle = next.lifecycle.filter((item) => item.id !== rule.id); change(next); };
+  const baseYear = Number(household.baseMonth.slice(0, 4));
+  const male = household.members.find((member) => member.id === "male");
+  const female = household.members.find((member) => member.id === "female");
+  const retirementOffset = Math.max((household.settings.maleRetirementAge - (male?.age ?? household.settings.maleRetirementAge)) * 12, (household.settings.femaleRetirementAge - (female?.age ?? household.settings.femaleRetirementAge)) * 12);
+  const chart = Array.from({ length: 51 }, (_, index) => {
+    const summary = lifecycleYearSummary(household, index);
+    let regularExpense = 0;
+    for (let month = index * 12; month < index * 12 + 12; month += 1) regularExpense += month >= retirementOffset ? household.settings.retirementMonthlyExpense * Math.pow(1 + household.settings.inflationRate, month / 12) : baseExpenseAtMonth(household, month);
+    return { year: baseYear + index, 基础生活: Math.round(regularExpense / 10000), 阶段支出: Math.round(summary.lifecycleExpense / 10000), 保障缴费: Math.round(summary.protectionExpense / 10000), 养老金收入: Math.round(summary.pensionIncome / 10000) };
+  });
+  const activeRules = rules.filter((rule) => rule.startMonth <= `${selectedYear}-12` && (!rule.endMonth || rule.endMonth >= `${selectedYear}-01`));
+  return <><PageIntro eyebrow="家庭生命周期" title="把未来的大事，放进同一条时间线。" copy="教育、照护和医疗费用只有在你填写后才进入模拟；标记为“已包含”的项目只用于说明，不会重复计费。"/>
+    <Panel title="未来 50 年家庭支出" eyebrow="年度金额 · 万元"><div className="chart x-tall"><ResponsiveContainer width="100%" height="100%"><AreaChart data={chart} onClick={(state) => { const year = Number(state?.activeLabel); if (year) setSelectedYear(year); }}><CartesianGrid vertical={false} stroke="#ebe8df"/><XAxis dataKey="year" minTickGap={24}/><YAxis/><Tooltip formatter={(value) => `${value} 万元`}/><Legend/><Area type="monotone" dataKey="基础生活" stackId="expense" stroke="#8ebaa8" fill="#dcece5"/><Area type="monotone" dataKey="阶段支出" stackId="expense" stroke="#e57f67" fill="#f5d4ca"/><Area type="monotone" dataKey="保障缴费" stackId="expense" stroke="#e8b86d" fill="#f7e6c8"/><Line type="monotone" dataKey="养老金收入" stroke="#3f7d68" strokeWidth={3} dot={false}/></AreaChart></ResponsiveContainer></div><div className="timeline-year"><strong>{selectedYear} 年</strong><span>{activeRules.length ? activeRules.map((rule) => rule.name).join(" · ") : "暂无阶段事件"}</span></div></Panel>
+    <Panel title="阶段与费用规则" eyebrow={`${rules.length} 条 · 未填写金额显示待补充`} action={<button className="primary" onClick={addRule}><Plus size={16}/> 添加阶段</button>}><div className="lifecycle-list">{rules.map((rule) => <article className="lifecycle-card" key={rule.id}><header><div><span>{lifecycleCategoryNames[rule.category]}</span><input aria-label="阶段名称" value={rule.name} onChange={(event) => updateRule(rule.id, { name: event.target.value })}/></div><button className="icon-btn" aria-label="删除阶段" onClick={() => removeRule(rule)}><Trash2 size={16}/></button></header><div className="expense-grid"><label className="field"><span>类型</span><select value={rule.category} onChange={(event) => updateRule(rule.id, { category: event.target.value as LifecycleExpenseRule["category"] })}>{Object.entries(lifecycleCategoryNames).map(([value,label]) => <option value={value} key={value}>{label}</option>)}</select></label><label className="field"><span>计费方式</span><select value={rule.mode} onChange={(event) => updateRule(rule.id, { mode: event.target.value as LifecycleExpenseRule["mode"] })}><option value="additional">额外增加</option><option value="included">已包含，不重复计费</option></select></label><label className="field"><span>开始月份</span><input type="month" value={rule.startMonth} onChange={(event) => updateRule(rule.id, { startMonth: event.target.value as typeof rule.startMonth })}/></label><label className="field"><span>结束月份</span><input type="month" value={rule.endMonth ?? ""} onChange={(event) => updateRule(rule.id, { endMonth: (event.target.value || undefined) as typeof rule.endMonth })}/></label><NullableField label="每月费用" value={rule.monthlyAmount} suffix="元" onChange={(value) => updateRule(rule.id, { monthlyAmount: value })}/><NullableField label="每年额外费用" value={rule.annualAmount} suffix="元" onChange={(value) => updateRule(rule.id, { annualAmount: value })}/><NullableField label="一次性费用" value={rule.oneTimeAmount} suffix="元" onChange={(value) => updateRule(rule.id, { oneTimeAmount: value })}/><Field label="费用年增长" value={rule.inflationRate * 100} suffix="%" step={0.1} min={0} onChange={(value) => updateRule(rule.id, { inflationRate: value / 100 })}/></div><label className="check-row"><input type="checkbox" checked={rule.essential} onChange={(event) => updateRule(rule.id, { essential: event.target.checked })}/><span>必要支出，不允许动态策略自动削减</span></label>{rule.mode === "included" && <p className="included-note">此项仅显示在时间线上，当前金额已包含在基础生活费中。</p>}</article>)}</div></Panel>
+  </>;
+}

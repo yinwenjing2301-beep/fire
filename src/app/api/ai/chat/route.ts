@@ -8,7 +8,6 @@ const requestSchema = z.object({
   message: z.string().min(1).max(4000),
   household: z.object({ version: z.literal(1) }).passthrough(),
   history: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(8000) })).max(12).optional().default([]),
-  scenarios: z.array(z.object({ name: z.string(), createdAt: z.string(), result: z.object({ summary: z.record(z.string(), z.unknown()) }).passthrough() }).passthrough()).max(20).optional().default([]),
   currentRiskSettings: z.object({ annualVolatility: z.number(), iterations: z.number(), seed: z.number(), endAge: z.number() }).passthrough(),
   riskResult: z.object({ householdUpdatedAt: z.string(), createdAt: z.string(), input: z.object({ settings: z.record(z.string(), z.unknown()) }).passthrough(), result: z.record(z.string(), z.unknown()) }).passthrough().nullable().optional(),
   stressResult: z.object({ name: z.string(), householdUpdatedAt: z.string(), createdAt: z.string(), input: z.object({ settings: z.record(z.string(), z.unknown()) }).passthrough().optional(), baseline: z.record(z.string(), z.unknown()), impacted: z.record(z.string(), z.unknown()), improvements: z.array(z.record(z.string(), z.unknown())) }).passthrough().nullable().optional(),
@@ -39,7 +38,6 @@ export async function POST(request: Request) {
     withdrawalStrategy: household.withdrawalStrategy,
     deterministicResult: simulation.summary,
     risks: simulation.risks,
-    savedScenarios: parsed.data.scenarios.map((scenario) => ({ name: scenario.name, createdAt: scenario.createdAt, summary: scenario.result.summary })),
     riskAnalysis: parsed.data.riskResult ? {
       createdAt: parsed.data.riskResult.createdAt,
       stale: parsed.data.riskResult.householdUpdatedAt !== household.updatedAt || riskSettingsChanged(parsed.data.riskResult.input.settings),
@@ -62,7 +60,7 @@ export async function POST(request: Request) {
       messages: [
         { role: "system", content: "你是 FIRE 40 家庭财务规划助手。只能依据给出的用户输入、确定性引擎结果以及已有风险/压力测试聚合结果分析。绝对不得自行编造资金充足比例、分位数或压力测试数字；没有风险结果时必须让用户先运行模拟。若结果已过期必须明确提示。回答严格区分：真实数据、模型假设、模拟结果、分析判断、调整建议、缺失信息。不得承诺收益，金额使用人民币。" },
         { role: "user", content: `以下是本次对话持续有效的家庭与计算上下文：${JSON.stringify(compactContext)}` },
-        { role: "assistant", content: "已读取当前家庭数据、确定性模拟结果和已保存情景。我会据此回答，并明确说明假设与缺失信息。" },
+        { role: "assistant", content: "已读取当前家庭数据、确定性模拟结果和风险/压力测试结果。我会据此回答，并明确说明假设与缺失信息。" },
         ...parsed.data.history,
         { role: "user", content: parsed.data.message }
       ],
