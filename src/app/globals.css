@@ -43,7 +43,7 @@ aside nav button.nav-section-toggle.contains-active { color: #d7e2dc; }
 aside nav button:hover, .sidebar-settings button:hover { background: rgba(255,255,255,.055); color: white; }
 aside nav button.active, .sidebar-settings button.active { color: #fff; background: rgba(255,255,255,.1); }
 aside nav button.active > i, .sidebar-settings button.active > i { position: absolute; right: 10px; width: 5px; height: 5px; border-radius: 50%; background: #f1c984; }
-.sidebar-settings { flex: 0 0 auto; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.07); }
+.sidebar-settings { flex: 0 0 auto; margin-top: auto; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.07); }
 .sidebar-foot { flex: 0 0 auto; padding: 14px 8px 0; }
 .local-badge { display: flex; gap: 7px; align-items: center; color: #b9d2c6; font-size: 12px; }
 .sidebar-foot p { color: #84948c; font-size: 10px; margin: 8px 0 0; }
