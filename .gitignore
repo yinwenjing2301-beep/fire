@@ -1,0 +1,12 @@
+node_modules
+.next
+coverage
+*.log
+*.tsbuildinfo
+.DS_Store
+
+# Local environment files may contain API keys.
+.env*
+!.env.example
+
+prisma/dev.db
