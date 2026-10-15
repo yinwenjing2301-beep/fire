@@ -19,24 +19,34 @@ import type { AppData, HouseholdSnapshot, LifecycleExpenseRule, MonteCarloAggreg
 
 type View = "dashboard" | "family" | "simulator" | "risk-center" | "risk" | "stress" | "withdrawal" | "lifecycle" | "protection" | "checklist" | "housing" | "investments" | "scenarios" | "ai" | "settings";
 type AIConnection = { provider: "openai-compatible"; baseUrl: string; model: string; apiKey: string };
+type NavItem = { id: View; label: string; icon: typeof Home };
 
-const nav: { id: View; label: string; icon: typeof Home }[] = [
-  { id: "dashboard", label: "总览", icon: Home },
-  { id: "family", label: "家庭财务", icon: Users },
-  { id: "simulator", label: "FIRE 模拟器", icon: Gauge },
-  { id: "risk-center", label: "退休风险中心", icon: BadgeDollarSign },
-  { id: "risk", label: "长期风险模拟", icon: Activity },
-  { id: "stress", label: "压力测试", icon: ShieldAlert },
-  { id: "withdrawal", label: "退休提取策略", icon: WalletCards },
-  { id: "lifecycle", label: "生命周期规划", icon: GraduationCap },
-  { id: "protection", label: "社保与养老金", icon: HeartPulse },
-  { id: "checklist", label: "退休准备清单", icon: ListChecks },
-  { id: "housing", label: "住房规划", icon: Building2 },
-  { id: "investments", label: "投资配置", icon: ChartNoAxesCombined },
-  { id: "scenarios", label: "情景对比", icon: Scale },
-  { id: "ai", label: "AI 财务顾问", icon: Bot },
-  { id: "settings", label: "设置中心", icon: Settings }
+const dashboardNav: NavItem = { id: "dashboard", label: "总览", icon: Home };
+const settingsNav: NavItem = { id: "settings", label: "设置中心", icon: Settings };
+const navGroups: { label: string; items: NavItem[] }[] = [
+  { label: "家庭资料", items: [
+    { id: "family", label: "家庭财务", icon: Users },
+    { id: "lifecycle", label: "生命周期规划", icon: GraduationCap },
+    { id: "housing", label: "住房规划", icon: Building2 },
+    { id: "protection", label: "社保与养老金", icon: HeartPulse },
+    { id: "investments", label: "投资配置", icon: ChartNoAxesCombined }
+  ] },
+  { label: "退休方案", items: [
+    { id: "simulator", label: "FIRE 模拟器", icon: Gauge },
+    { id: "withdrawal", label: "退休提取策略", icon: WalletCards },
+    { id: "scenarios", label: "情景对比", icon: Scale }
+  ] },
+  { label: "风险验证", items: [
+    { id: "risk-center", label: "退休风险中心", icon: BadgeDollarSign },
+    { id: "risk", label: "长期风险模拟", icon: Activity },
+    { id: "stress", label: "压力测试", icon: ShieldAlert }
+  ] },
+  { label: "行动与建议", items: [
+    { id: "checklist", label: "退休准备清单", icon: ListChecks },
+    { id: "ai", label: "AI 财务顾问", icon: Bot }
+  ] }
 ];
+const mobileNav = [dashboardNav, navGroups[0].items[0], navGroups[1].items[0], navGroups[2].items[0]];
 
 const colors = ["#3f7d68", "#8ebaa8", "#e8b86d", "#e57f67", "#7c8ea3", "#c8bca7"];
 const money = (value: number | null, compact = false) => value == null
@@ -483,6 +493,7 @@ export function FireApp() {
   const [ready, setReady] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set());
   useEffect(() => {
     const apiKey = sessionStorage.getItem("fire40-ai-key") ?? "";
     void loadData().then((value) => { setData(value); void saveData(value); setAIConnectionState({ ...value.aiSettings, apiKey }); setReady(true); });
@@ -544,9 +555,9 @@ export function FireApp() {
   };
   if (!ready) return <div className="loading"><PiggyBank/><span>正在整理家庭账本…</span></div>;
   return <div className="app-shell">
-    <aside className={menu ? "open" : ""}><div className="brand"><div><span>F</span><i/></div><strong>FIRE 40</strong><button aria-label="关闭导航" className="mobile-close" onClick={() => setMenu(false)}><X/></button></div><div className="family-chip"><span>家庭计划</span><strong>{data.household.householdName}</strong><small>{data.household.baseMonth} · 人民币</small></div><nav>{nav.map((item) => <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => { setView(item.id); setMenu(false); }}><item.icon size={19}/><span>{item.label}</span>{view === item.id && <i/>}</button>)}</nav><div className="sidebar-foot"><div className="local-badge"><CircleCheck size={16}/><span>数据仅存本地</span></div><p>FIRE 40 不构成投资建议</p></div></aside>
+    <aside className={menu ? "open" : ""}><div className="brand"><div><span>F</span><i/></div><strong>FIRE 40</strong><button aria-label="关闭导航" className="mobile-close" onClick={() => setMenu(false)}><X/></button></div><div className="family-chip"><span>家庭计划</span><strong>{data.household.householdName}</strong><small>{data.household.baseMonth} · 人民币</small></div><nav aria-label="规划功能"><button className={view === dashboardNav.id ? "active" : ""} onClick={() => { setView(dashboardNav.id); setMenu(false); }}><dashboardNav.icon size={19}/><span>{dashboardNav.label}</span>{view === dashboardNav.id && <i/>}</button>{navGroups.map((group) => { const expanded = expandedGroups.has(group.label); const containsActive = group.items.some((item) => item.id === view); return <section className="nav-section" key={group.label}><button type="button" className={`nav-section-toggle ${containsActive ? "contains-active" : ""}`} aria-expanded={expanded} onClick={() => setExpandedGroups((current) => { const next = new Set(current); if (next.has(group.label)) next.delete(group.label); else next.add(group.label); return next; })}><span>{group.label}</span><ChevronRight size={15} className={expanded ? "expanded" : ""}/></button>{expanded && <div className="nav-section-items">{group.items.map((item) => <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => { setView(item.id); setMenu(false); }}><item.icon size={18}/><span>{item.label}</span>{view === item.id && <i/>}</button>)}</div>}</section>; })}</nav><div className="sidebar-settings"><button className={view === settingsNav.id ? "active" : ""} onClick={() => { setView(settingsNav.id); setMenu(false); }}><settingsNav.icon size={18}/><span>{settingsNav.label}</span>{view === settingsNav.id && <i/>}</button></div><div className="sidebar-foot"><div className="local-badge"><CircleCheck size={16}/><span>数据仅存本地</span></div><p>FIRE 40 不构成投资建议</p></div></aside>
     {menu && <button className="backdrop" onClick={() => setMenu(false)} aria-label="关闭导航"/>}
     <main><header className="topbar"><button aria-label="打开导航" className="menu-btn" onClick={() => setMenu(true)}><Menu/></button><div><span className={dirty ? "status-dot dirty" : "status-dot"}/><span>{dirty ? "有未保存修改" : "本地方案已保存"}</span></div><div className="top-actions"><span className="soft-pill">基准月 {data.household.baseMonth}</span><button className="secondary" onClick={() => void persist()} disabled={!dirty}><Save size={16}/> 保存</button><button className="run" onClick={() => setView("simulator")}><Play size={16}/> 运行模拟</button></div></header><div className="content">{render()}</div></main>
-    <nav className="mobile-nav">{nav.slice(0, 4).map((item) => <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => setView(item.id)}><item.icon/><span>{item.label}</span></button>)}<button onClick={() => setMenu(true)}><Menu/><span>更多</span></button></nav>
+    <nav className="mobile-nav">{mobileNav.map((item) => <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => setView(item.id)}><item.icon/><span>{item.label}</span></button>)}<button onClick={() => setMenu(true)}><Menu/><span>更多</span></button></nav>
   </div>;
 }

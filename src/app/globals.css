@@ -33,11 +33,18 @@ aside { position: sticky; top: 0; height: 100vh; padding: 28px 20px 22px; backgr
 .family-chip span, .family-chip small { display: block; color: #aebbb5; font-size: 11px; }
 .family-chip strong { display: block; margin: 6px 0 5px; font-size: 13px; }
 aside nav { display: grid; gap: 5px; overflow-y: auto; scrollbar-width: thin; }
-aside nav button { position: relative; width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 13px; border: 0; border-radius: 12px; color: #b9c5bf; background: transparent; cursor: pointer; text-align: left; transition: .2s ease; }
-aside nav button:hover { background: rgba(255,255,255,.055); color: white; }
-aside nav button.active { color: #fff; background: rgba(255,255,255,.1); }
-aside nav button.active > i { position: absolute; right: 10px; width: 5px; height: 5px; border-radius: 50%; background: #f1c984; }
-.sidebar-foot { margin-top: auto; padding: 0 8px; }
+.nav-section { display: grid; gap: 3px; margin-top: 13px; }
+.nav-section-items { display: grid; gap: 3px; }
+aside nav button, .sidebar-settings button { position: relative; width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px 13px; border: 0; border-radius: 12px; color: #b9c5bf; background: transparent; cursor: pointer; text-align: left; transition: .2s ease; }
+aside nav button.nav-section-toggle { justify-content: space-between; padding: 6px 13px; color: #71857c; border-radius: 8px; font-size: 9px; font-weight: 700; letter-spacing: .16em; }
+aside nav button.nav-section-toggle.contains-active { color: #c7d7d0; }
+.nav-section-toggle svg { transition: transform .2s ease; }
+.nav-section-toggle svg.expanded { transform: rotate(90deg); }
+aside nav button:hover, .sidebar-settings button:hover { background: rgba(255,255,255,.055); color: white; }
+aside nav button.active, .sidebar-settings button.active { color: #fff; background: rgba(255,255,255,.1); }
+aside nav button.active > i, .sidebar-settings button.active > i { position: absolute; right: 10px; width: 5px; height: 5px; border-radius: 50%; background: #f1c984; }
+.sidebar-settings { flex: 0 0 auto; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.07); }
+.sidebar-foot { flex: 0 0 auto; padding: 14px 8px 0; }
 .local-badge { display: flex; gap: 7px; align-items: center; color: #b9d2c6; font-size: 12px; }
 .sidebar-foot p { color: #84948c; font-size: 10px; margin: 8px 0 0; }
 
