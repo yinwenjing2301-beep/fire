@@ -36,8 +36,8 @@ aside nav { display: grid; gap: 5px; overflow-y: auto; scrollbar-width: thin; }
 .nav-section { display: grid; gap: 3px; margin-top: 13px; }
 .nav-section-items { display: grid; gap: 3px; }
 aside nav button, .sidebar-settings button { position: relative; width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px 13px; border: 0; border-radius: 12px; color: #b9c5bf; background: transparent; cursor: pointer; text-align: left; transition: .2s ease; }
-aside nav button.nav-section-toggle { justify-content: space-between; padding: 6px 13px; color: #71857c; border-radius: 8px; font-size: 9px; font-weight: 700; letter-spacing: .16em; }
-aside nav button.nav-section-toggle.contains-active { color: #c7d7d0; }
+aside nav button.nav-section-toggle { justify-content: space-between; padding: 10px 13px; color: #9fb0a8; border-radius: 8px; font-size: 13px; font-weight: 700; letter-spacing: .04em; }
+aside nav button.nav-section-toggle.contains-active { color: #d7e2dc; }
 .nav-section-toggle svg { transition: transform .2s ease; }
 .nav-section-toggle svg.expanded { transform: rotate(90deg); }
 aside nav button:hover, .sidebar-settings button:hover { background: rgba(255,255,255,.055); color: white; }
